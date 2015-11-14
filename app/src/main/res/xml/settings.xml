@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="Authentication" >
+        <EditTextPreference
+            android:key="@string/KEY_USERNAME"
+            android:hint="My Victoria username"
+            android:title="Username"
+            android:summary="Your username used to login to myVictoria" />
+        <EditTextPreference
+            android:key="@string/KEY_PASSWORD"
+            android:hint="My Victoria password"
+            android:title="Password"
+            android:inputType="textPassword"
+            android:summary="Your password used to login to myVictoria" />
+    </PreferenceCategory>
+</PreferenceScreen>
