@@ -9,6 +9,7 @@ import android.support.v13.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,28 +21,24 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.jar.Attributes;
 
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
-import io.realm.exceptions.RealmMigrationNeededException;
 import nz.co.pearson.vuwexams.R;
 import nz.co.pearson.vuwexams.networking.ApiWorker;
 import nz.co.pearson.vuwexams.networking.Course;
 
-/**
- * Created by michael on 14/11/15.
- */
 public class GradesFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
     private AppBarLayout appBarLayout;
-    private PagerSlidingTabStrip tabs;
     private Realm realm;
-    private SwipeRefreshLayout swipeRefreshLayout;
-    private ViewPager pagerView;
+
+    private static PagerSlidingTabStrip tabs;
+    private static SwipeRefreshLayout swipeRefreshLayout;
+    private static ViewPager pagerView;
+    private static Fragment context;
     private boolean dataLoaded = false;
 
     @Nullable
@@ -53,7 +50,6 @@ public class GradesFragment extends Fragment implements SwipeRefreshLayout.OnRef
         Realm.setDefaultConfiguration(realmConfig);
         realm = Realm.getInstance(realmConfig);
 
-
         initDisplay(view);
         return(view);
     }
@@ -63,7 +59,7 @@ public class GradesFragment extends Fragment implements SwipeRefreshLayout.OnRef
             @Override
             protected void dataReady(List<Course> courses) {
                 swipeRefreshLayout.setRefreshing(false);
-                pagerView.setAdapter(new YearPager(getFragmentManager(), courses));
+                pagerView.setAdapter(new YearPager(context.getFragmentManager(), courses));
                 tabs.setViewPager(pagerView);
             }
             @Override
@@ -72,7 +68,6 @@ public class GradesFragment extends Fragment implements SwipeRefreshLayout.OnRef
                     super.showFeedback();
                 }
             }
-
         }.execute();
     }
 
@@ -80,6 +75,13 @@ public class GradesFragment extends Fragment implements SwipeRefreshLayout.OnRef
     @Override
     public void onResume() {
         super.onResume();
+        context = this;
+        swipeRefreshLayout = (SwipeRefreshLayout)getActivity().findViewById(R.id.swipe_refresh_layout);
+        appBarLayout = (AppBarLayout)getActivity().findViewById(R.id.toolbar_layout);
+        pagerView = (ViewPager)getActivity().findViewById(R.id.pager);
+
+        swipeRefreshLayout.setOnRefreshListener(this);
+
         if(!dataLoaded) {
             onRefresh();
         }
@@ -109,18 +111,18 @@ public class GradesFragment extends Fragment implements SwipeRefreshLayout.OnRef
 
         pagerView.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {}
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+            }
+
             @Override
-            public void onPageSelected(int position) {}
+            public void onPageSelected(int position) {
+            }
+
             @Override
             public void onPageScrollStateChanged(int state) {
                 swipeRefreshLayout.setEnabled(state == ViewPager.SCROLL_STATE_IDLE);
             }
         });
-
-        swipeRefreshLayout = (SwipeRefreshLayout)view.findViewById(R.id.swipe_refresh_layout);
-        swipeRefreshLayout.setOnRefreshListener(this);
-
 
     }
 
@@ -130,7 +132,9 @@ public class GradesFragment extends Fragment implements SwipeRefreshLayout.OnRef
         realm.close();
         appBarLayout.removeView(tabs);
         pagerView.removeAllViews();
+        swipeRefreshLayout.setOnRefreshListener(null);
     }
+
 
     class YearPager extends FragmentStatePagerAdapter {
         private List<NamedFragment> fragments = new ArrayList<>();

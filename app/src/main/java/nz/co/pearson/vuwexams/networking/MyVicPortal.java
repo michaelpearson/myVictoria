@@ -144,7 +144,13 @@ public class MyVicPortal implements DataSource {
                 double efts = Double.valueOf(singleCourse.get(4).text());
                 String registration = singleCourse.get(5).text();
                 String grade = singleCourse.get(6).text();
-                int gradepoint = Integer.valueOf(singleCourse.get(7).text());
+                int gradepoint = 0;
+                try {
+                    gradepoint = Integer.valueOf(singleCourse.get(7).text());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
                 int pointsGained = Integer.valueOf(singleCourse.get(8).text());
 
                 courses.add(new Course(year, grade, code, title, period, points, efts, registration, gradepoint, pointsGained));
