@@ -139,7 +139,7 @@ public class MyVicPortal implements DataSource {
                 }
                 String code = singleCourse.get(0).text();
                 String title = singleCourse.get(1).text();
-                Course.CoursePeriod period = Course.CoursePeriod.fromDescriptor(singleCourse.get(2).text());
+                String period = singleCourse.get(2).text();
                 int points = Integer.valueOf(singleCourse.get(3).text());
                 double efts = Double.valueOf(singleCourse.get(4).text());
                 String registration = singleCourse.get(5).text();

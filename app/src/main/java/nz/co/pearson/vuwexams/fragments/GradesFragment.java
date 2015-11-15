@@ -27,6 +27,8 @@ import java.util.Set;
 import java.util.jar.Attributes;
 
 import io.realm.Realm;
+import io.realm.RealmConfiguration;
+import io.realm.exceptions.RealmMigrationNeededException;
 import nz.co.pearson.vuwexams.R;
 import nz.co.pearson.vuwexams.networking.ApiWorker;
 import nz.co.pearson.vuwexams.networking.Course;
@@ -46,7 +48,12 @@ public class GradesFragment extends Fragment implements SwipeRefreshLayout.OnRef
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_grades, container, false);
-        realm = Realm.getInstance(this.getActivity());
+
+        RealmConfiguration realmConfig = new RealmConfiguration.Builder(getActivity()).deleteRealmIfMigrationNeeded().build();
+        Realm.setDefaultConfiguration(realmConfig);
+        realm = Realm.getInstance(realmConfig);
+
+
         initDisplay(view);
         return(view);
     }

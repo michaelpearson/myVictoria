@@ -1,6 +1,7 @@
 package nz.co.pearson.vuwexams.networking;
 
 import io.realm.RealmObject;
+import io.realm.annotations.Ignore;
 
 /**
  * Created by michael on 13/11/15.
@@ -9,13 +10,18 @@ public class Course extends RealmObject {
     private String letterGrade;
     private String courseCode;
     private String title;
-    //private CoursePeriod period;
+    private String period;
     private int points;
     private double efts;
     private String registrationStatus;
     private int gradePoint;
     private int pointsGaines;
     private int year;
+
+    @Ignore
+    private int EnumPeriod;
+    //Hack: Cannot have custom methods on a model.
+
 
     public enum CoursePeriod {
         TRIMESTER_1 ("1", "Trimester 1"),
@@ -47,19 +53,17 @@ public class Course extends RealmObject {
 
     public Course() {}
 
-    protected Course(int year, String letterGrade, String courseCode, String title, CoursePeriod period, int points, double efts, String registrationStatus, int gradePoint, int pointsGained) {
+    protected Course(int year, String letterGrade, String courseCode, String title, String period, int points, double efts, String registrationStatus, int gradePoint, int pointsGained) {
         this.year = year;
         this.letterGrade = letterGrade;
         this.courseCode = courseCode;
         this.title = title;
-        //this.period = period;
+        this.period = period;
         this.efts = efts;
         this.registrationStatus = registrationStatus;
         this.gradePoint = gradePoint;
         this.points = points;
         this.pointsGaines = pointsGained;
-
-        this.letterGrade = "A+";
     }
 
     public int getYear() {
@@ -94,15 +98,18 @@ public class Course extends RealmObject {
         this.title = title;
     }
 
-    /*
-    public CoursePeriod getPeriod() {
+    public String getPeriod() {
         return period;
     }
 
-    public void setPeriod(CoursePeriod period) {
+    public void setPeriod(String period) {
         this.period = period;
     }
-    */
+
+
+    public CoursePeriod getEnumPeriod() {
+        return(CoursePeriod.fromDescriptor(getPeriod()));
+    }
 
     public int getPoints() {
         return points;
