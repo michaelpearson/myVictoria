@@ -1,6 +1,5 @@
 package nz.co.pearson.vuwexams.networking;
 
-import io.realm.Realm;
 import io.realm.RealmObject;
 
 /**
@@ -59,6 +58,8 @@ public class Course extends RealmObject {
         this.gradePoint = gradePoint;
         this.points = points;
         this.pointsGaines = pointsGained;
+
+        this.letterGrade = "A+";
     }
 
     public int getYear() {

@@ -12,6 +12,7 @@ import android.support.annotation.Nullable;
 
 import java.util.List;
 
+import io.realm.Realm;
 import nz.co.pearson.vuwexams.R;
 import nz.co.pearson.vuwexams.SettingsActivity;
 import nz.co.pearson.vuwexams.networking.exceptions.DataSourceError;
@@ -20,58 +21,25 @@ public abstract class ApiWorker extends AsyncTask<Void, String, List<Course>> {
     private Context context;
 
     private DataSource datasource;
-    private FeedbackStrategy feedback;
+    private AlertDialog progressDialog;
 
-    public interface FeedbackStrategy {
-        void show();
-        void postProgress(String progress);
-        void dismiss();
-    }
 
     public ApiWorker(final Context context) {
-        this(context, new FeedbackStrategy() {
-            private ProgressDialog progressDialog;
-            @Override
-            public void show() {
-                progressDialog = ProgressDialog.show(context, "Loading exam results", "Loading. Please wait...");
-            }
-            @Override
-            public void postProgress(String progress) {
-                progressDialog.setMessage(progress);
-            }
-            @Override
-            public void dismiss() {
-                progressDialog.dismiss();
-            }
-        });
-    }
-    public ApiWorker(final Context context, FeedbackStrategy feedback) {
         this.context = context;
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         String username = sharedPreferences.getString(context.getString(R.string.KEY_USERNAME), null);
         String password = sharedPreferences.getString(context.getString(R.string.KEY_PASSWORD), null);
         if(username == null || password == null || username.equals("") || password.equals(""))  {
-            (new AlertDialog.Builder(context)).setMessage("Please enter your username and password").setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    Intent i = new Intent(context, SettingsActivity.class);
-                    context.startActivity(i);
-                }
-            }).setNegativeButton(android.R.string.cancel, null).show();
+            missingUsernameAndPassword();
         } else {
             datasource = new MyVicPortal(username, password);
-            this.feedback = feedback;
         }
     }
-
-
 
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
-        if(feedback != null) {
-            feedback.show();
-        }
+        showFeedback();
     }
 
     @Override
@@ -91,19 +59,49 @@ public abstract class ApiWorker extends AsyncTask<Void, String, List<Course>> {
     @Override
     protected void onProgressUpdate(String... values) {
         super.onProgressUpdate(values);
-        if(values.length > 0 && feedback != null) {
-            feedback.postProgress(values[0]);
+        if(values.length > 0) {
+            postProgress(values[0]);
         }
     }
 
     @Override
     protected void onPostExecute(List<Course> courses) {
         super.onPostExecute(courses);
-        if(feedback != null) {
-            feedback.dismiss();
-        }
+        dismissFeedback();
+        Realm realm = Realm.getInstance(context);
+        realm.beginTransaction();
+        realm.clear(Course.class);
+        realm.copyToRealm(courses);
+        realm.commitTransaction();
+        realm.close();
         dataReady(courses);
     }
 
     protected abstract void dataReady(@Nullable List<Course> courses);
+
+    public void showFeedback() {
+        progressDialog = ProgressDialog.show(context, "Loading exam results", "Loading. Please wait...");
+    }
+
+    public void postProgress(String progress) {
+        if(progressDialog != null) {
+            progressDialog.setMessage(progress);
+        }
+    }
+
+    public void dismissFeedback() {
+        if(progressDialog != null) {
+            progressDialog.dismiss();
+        }
+    }
+
+    public void missingUsernameAndPassword() {
+        (new AlertDialog.Builder(context)).setMessage("Please enter your username and password").setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                Intent i = new Intent(context, SettingsActivity.class);
+                context.startActivity(i);
+            }
+        }).setNegativeButton(android.R.string.cancel, null).show();
+    }
 }

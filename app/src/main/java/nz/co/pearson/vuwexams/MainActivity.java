@@ -4,11 +4,7 @@ import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -17,23 +13,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Button;
-import android.widget.ShareActionProvider;
-import android.widget.TextView;
 
-import java.net.URI;
-import java.util.List;
-
-import io.realm.Realm;
-import io.realm.RealmConfiguration;
 import nz.co.pearson.vuwexams.fragments.ExamsFragment;
-import nz.co.pearson.vuwexams.fragments.Grades;
+import nz.co.pearson.vuwexams.fragments.GradesFragment;
 import nz.co.pearson.vuwexams.fragments.TimetableFragment;
-import nz.co.pearson.vuwexams.networking.ApiWorker;
-import nz.co.pearson.vuwexams.networking.Course;
-import nz.co.pearson.vuwexams.networking.DataSource;
-import nz.co.pearson.vuwexams.networking.MyVicPortal;
-import nz.co.pearson.vuwexams.networking.exceptions.DataSourceError;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private int currentFragment;
@@ -101,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         switch(menuItem) {
             default:
             case R.id.nav_grades:
-                newFragment = new Grades();
+                newFragment = new GradesFragment();
                 break;
             case R.id.nav_exams:
                 newFragment = new ExamsFragment();
