@@ -19,7 +19,6 @@ import nz.co.pearson.vuwexams.fragments.GradesFragment;
 import nz.co.pearson.vuwexams.fragments.TimetableFragment;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
-    private int currentFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,17 +55,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         switchFragment(item.getItemId());
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -79,7 +67,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void switchFragment(int menuItem) {
-        currentFragment = menuItem;
         Fragment newFragment;
         switch(menuItem) {
             default:

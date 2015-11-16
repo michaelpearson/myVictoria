@@ -68,16 +68,18 @@ public abstract class ApiWorker extends AsyncTask<Void, String, List<Course>> {
     protected void onPostExecute(List<Course> courses) {
         super.onPostExecute(courses);
         dismissFeedback();
-        Realm realm = Realm.getInstance(context);
-        realm.beginTransaction();
-        realm.clear(Course.class);
-        realm.copyToRealm(courses);
-        realm.commitTransaction();
-        realm.close();
-        dataReady(courses);
+        if(courses != null && courses.size() > 0) {
+            Realm realm = Realm.getInstance(context);
+            realm.beginTransaction();
+            realm.clear(Course.class);
+            realm.copyToRealm(courses);
+            realm.commitTransaction();
+            realm.close();
+            dataReady();
+        }
     }
 
-    protected abstract void dataReady(@Nullable List<Course> courses);
+    protected abstract void dataReady();
 
     public void showFeedback() {
         progressDialog = ProgressDialog.show(context, "Loading exam results", "Loading. Please wait...");

@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.realm.Realm;
+import io.realm.RealmChangeListener;
 import nz.co.pearson.vuwexams.R;
 import nz.co.pearson.vuwexams.networking.Course;
 
@@ -42,6 +43,7 @@ public class YearGradesFragment extends NamedFragment {
         View view = inflater.inflate(R.layout.fragment_year_grades, container, false);
 
         realm = Realm.getInstance(getActivity());
+
         courses = new ArrayList<>(realm.where(Course.class).equalTo("year", getYear()).findAll());
 
         final ListView list = (ListView) view.findViewById(R.id.course_list);
@@ -78,6 +80,7 @@ public class YearGradesFragment extends NamedFragment {
         super.onSaveInstanceState(outState);
         outState.putInt(KEY_YEAR, getYear());
     }
+
 
     class GradesAdapter extends BaseAdapter {
 
