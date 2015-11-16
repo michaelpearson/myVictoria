@@ -22,8 +22,9 @@ public abstract class Model<T extends RealmObject> {
 
     protected List<T> data;
     private Realm realm;
-    private boolean refreshing = false;
+    private static boolean refreshing = false;
     private Context context;
+    private static Set<DataChangeListener> observers = new HashSet<>(64);
 
     protected Model(Context context) {
         this.context = context;
@@ -42,7 +43,7 @@ public abstract class Model<T extends RealmObject> {
         void refreshFailed();
     }
 
-    private Set<DataChangeListener> observers = new HashSet<>(64);
+
 
 
     public List<T> getData() {

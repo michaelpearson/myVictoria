@@ -11,16 +11,11 @@ import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-
 import com.astuetz.PagerSlidingTabStrip;
-
-import java.util.List;
-
 import nz.co.pearson.vuwexams.R;
 import nz.co.pearson.vuwexams.data.CourseModel;
 import nz.co.pearson.vuwexams.data.Model;
 import nz.co.pearson.vuwexams.fragments.pagers.YearPagerAdapter;
-import nz.co.pearson.vuwexams.networking.Course;
 
 public class GradesFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener, Model.DataChangeListener {
 
@@ -29,50 +24,12 @@ public class GradesFragment extends Fragment implements SwipeRefreshLayout.OnRef
     private SwipeRefreshLayout swipeRefreshLayout;
     private ViewPager pagerView;
     private YearPagerAdapter yearPagerAdapter;
+    private CourseModel courseModel;
 
     @Override
-    public void onResume() {
-        CourseModel model = CourseModel.getInstance(this.getActivity());
-        model.addChangeListener(this);
-        swipeRefreshLayout.setRefreshing(model.isRefreshing());
-        super.onResume();
-    }
-
-    @Override
-    public void onStop() {
-        CourseModel.getInstance(this.getActivity()).removeChangeListener(this);
-        super.onStop();
-    }
-
-    public void onRefresh() {
-        CourseModel cm = CourseModel.getInstance(this.getActivity());
-        cm.refresh();
-        swipeRefreshLayout.setRefreshing(cm.isRefreshing());
-    }
-
-    @Override
-    public void onDataChanged(Model model) {
-        yearPagerAdapter.notifyDataSetChanged();
-        tabs.notifyDataSetChanged();
-        swipeRefreshLayout.setRefreshing(model.isRefreshing());
-    }
-
-    @Override
-    public void refreshFailed() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setMessage("Failed to refresh data");
-        builder.setTitle("Error");
-        builder.setPositiveButton(android.R.string.ok, null);
-        builder.show();
-    }
-
-    @Override
-    public void onDestroyView() {
-        appBarLayout.removeView(tabs);
-        pagerView.removeAllViews();
-        pagerView.setAdapter(null);
-        swipeRefreshLayout.setOnRefreshListener(null);
-        super.onDestroyView();
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        this.courseModel = new CourseModel(getActivity());
     }
 
     @Nullable @Override
@@ -93,7 +50,7 @@ public class GradesFragment extends Fragment implements SwipeRefreshLayout.OnRef
 
         appBarLayout.addView(tabs);
 
-        yearPagerAdapter = new YearPagerAdapter(getChildFragmentManager(), getActivity());
+        yearPagerAdapter = new YearPagerAdapter(getChildFragmentManager(), courseModel);
 
         pagerView = (ViewPager)view.findViewById(R.id.pager);
         pagerView.setAdapter(yearPagerAdapter);
@@ -108,4 +65,50 @@ public class GradesFragment extends Fragment implements SwipeRefreshLayout.OnRef
 
         return(view);
     }
+
+    @Override
+    public void onResume() {
+        courseModel.addChangeListener(this);
+        swipeRefreshLayout.setRefreshing(courseModel.isRefreshing());
+        super.onResume();
+    }
+
+    @Override
+    public void onStop() {
+        courseModel.removeChangeListener(this);
+        super.onStop();
+    }
+
+    public void onRefresh() {
+        courseModel.refresh();
+        swipeRefreshLayout.setRefreshing(courseModel.isRefreshing());
+    }
+
+    @Override
+    public void onDataChanged(Model model) {
+        yearPagerAdapter.notifyDataSetChanged();
+        tabs.notifyDataSetChanged();
+        swipeRefreshLayout.setRefreshing(model.isRefreshing());
+    }
+
+    @Override
+    public void refreshFailed() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setMessage("Failed to refresh data");
+        builder.setTitle("Error");
+        builder.setPositiveButton(android.R.string.ok, null);
+        builder.show();
+        swipeRefreshLayout.setRefreshing(courseModel.isRefreshing());
+    }
+
+    @Override
+    public void onDestroyView() {
+        appBarLayout.removeView(tabs);
+        pagerView.removeAllViews();
+        pagerView.setAdapter(null);
+        swipeRefreshLayout.setOnRefreshListener(null);
+        super.onDestroyView();
+    }
+
+
 }

@@ -25,16 +25,16 @@ import nz.co.pearson.vuwexams.networking.Course;
 public class YearPagerAdapter extends FragmentStatePagerAdapter {
     private List<NamedFragment> fragments = new ArrayList<>();
     private Context context;
+    private CourseModel courseModel;
 
-    public YearPagerAdapter(FragmentManager fm, Context context) {
+    public YearPagerAdapter(FragmentManager fm, CourseModel model) {
         super(fm);
-        this.context = context;
+        this.courseModel = model;
         initFragments();
     }
 
     private void initFragments() {
-        CourseModel cm = CourseModel.getInstance(context);
-        List<Course> courseList = cm.getData();
+        List<Course> courseList = courseModel.getData();
 
         if(courseList.size() == 0) {
             fragments.add(new NamedFragment() {

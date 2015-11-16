@@ -15,17 +15,9 @@ import nz.co.pearson.vuwexams.networking.MyVicPortal;
 import nz.co.pearson.vuwexams.networking.exceptions.DataSourceError;
 
 public class CourseModel extends Model<Course> {
-    private static CourseModel instance;
     private Context context;
 
-    public static CourseModel getInstance(Context context) {
-        if(instance == null) {
-            instance = new CourseModel(context);
-        }
-        return(instance);
-    }
-
-    private CourseModel(Context context) {
+    public CourseModel(Context context) {
         super(context);
         this.context = context;
     }
