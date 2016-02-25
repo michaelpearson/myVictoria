@@ -21,10 +21,10 @@ import io.realm.RealmQuery;
 public abstract class Model<T extends RealmObject> {
 
     protected List<T> data;
-    private Realm realm;
+    protected Realm realm;
     private static boolean refreshing = false;
     private Context context;
-    private static Set<DataChangeListener> observers = new HashSet<>(64);
+    private Set<DataChangeListener> observers = new HashSet<>(64);
 
     protected Model(Context context) {
         this.context = context;
@@ -107,5 +107,9 @@ public abstract class Model<T extends RealmObject> {
 
     public boolean isRefreshing() {
         return(refreshing);
+    }
+
+    public void destroy() {
+        realm.close();
     }
 }

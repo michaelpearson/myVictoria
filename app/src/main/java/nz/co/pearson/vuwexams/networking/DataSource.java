@@ -10,4 +10,5 @@ import nz.co.pearson.vuwexams.networking.exceptions.DataSourceError;
 public interface DataSource {
     boolean authenticate() throws DataSourceError;
     List<Course> retrieveCourses() throws DataSourceError;
+    List<ClassEvent> retrieveWeekOfClasses(int day, int month, int year) throws DataSourceError;
 }

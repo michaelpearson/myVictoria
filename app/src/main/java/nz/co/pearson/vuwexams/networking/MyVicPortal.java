@@ -36,6 +36,8 @@ public class MyVicPortal implements DataSource {
     private String username;
     private String password;
     private static CookieManager cookieManager = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
+    private static boolean isAuthenticated = false;
+
     private String lastPage = null;
 
     private static final int MAX_LENGTH = 1048576; //1MB
@@ -49,6 +51,8 @@ public class MyVicPortal implements DataSource {
     private static final String URL_LOGIN = "https://my.vuw.ac.nz/cp/home/login";
     private static final String URL_STUDENT_RECORDS_SESSION_HANDOFF = "http://my.vuw.ac.nz/cp/ip/login?sys=sctssb&url=https://student-records.vuw.ac.nz/pls/webprod/bwskfshd.P_CrseSchd";
     private static final String URL_ACADEMIC_HISTORY = "https://student-records.vuw.ac.nz/pls/webprod/bwsxacdh.P_FacStuInfo";
+
+    private static final String URL_TIMETABLE_PAGE = "https://student-records.vuw.ac.nz/pls/webprod/bwskfshd.P_CrseSchd?start_date_in=%d/%d/%d";
 
     private static final Pattern GET_UID_PATTERN = Pattern.compile("document\\.cplogin\\.uuid\\.value=\"((?:[a-f0-9]+-)+[a-f0-9]+)\"");
     private static final Pattern GET_STUDENT_RECORDS_LOGIN_TOKEN = Pattern.compile("document\\.location=\"([^\"]+)\";");
@@ -65,6 +69,9 @@ public class MyVicPortal implements DataSource {
 
     @Override
     public boolean authenticate() throws DataSourceError {
+        if(isAuthenticated) {
+            return true;
+        }
         try {
             Matcher matches = GET_UID_PATTERN.matcher(getPage(URL_GET_LOGIN_TOKEN));
             if(!matches.find()) {
@@ -76,7 +83,9 @@ public class MyVicPortal implements DataSource {
             postData.put(FORM_NAME_UID_TOKEN, matches.group(1));
             getPage(URL_GET_REQUIRED_COOKIES);
 
-            if (!sendPostRequest(URL_LOGIN, postData).contains(LOGIN_SUCCESSFUL_HINT)) {
+            String page = sendPostRequest(URL_LOGIN, postData);
+            if (!page.contains(LOGIN_SUCCESSFUL_HINT)) {
+                Log.i("Auth", page);
                 throw new AuthenticationError();
             }
             Matcher loginTicket = GET_STUDENT_RECORDS_LOGIN_TOKEN.matcher(getPage(URL_STUDENT_RECORDS_SESSION_HANDOFF));
@@ -85,11 +94,14 @@ public class MyVicPortal implements DataSource {
             }
             String loginUrl = loginTicket.group(1);
             getPage(loginUrl);
+
+            isAuthenticated = true;
+            return true;
+
         } catch (IOException e) {
             e.printStackTrace();
             throw new DataSourceError();
         }
-        return false;
     }
 
     private void dumpCookies() {
@@ -159,6 +171,18 @@ public class MyVicPortal implements DataSource {
         return courses;
     }
 
+    @Override
+    public List<ClassEvent> retrieveWeekOfClasses(int day, int month, int year) throws DataSourceError {
+        Log.i("Scraper", "Get classes");
+        if (true) return null;
+        try {
+            Log.i("Scraper", getPage(String.format(URL_TIMETABLE_PAGE, day, month, year)));
+        } catch (IOException e) {
+            throw new DataSourceError();
+        }
+        return null;
+    }
+
     private String getPage(String url) throws IOException {
         return(getPage(new URL(url)));
     }
@@ -169,7 +193,7 @@ public class MyVicPortal implements DataSource {
             connection.setRequestProperty("Referer", lastPage);
         }
         lastPage = url.toString();
-        log(String.format("Got webpage: %d %s", connection.getResponseCode(), connection.getResponseMessage()));
+        log(String.format("Got webpage: %d %s %s", connection.getResponseCode(), connection.getResponseMessage(), connection.getURL().toString()));
         connection.setReadTimeout(2000);
         InputStream input = connection.getInputStream();
         return(readInputStream(input));
