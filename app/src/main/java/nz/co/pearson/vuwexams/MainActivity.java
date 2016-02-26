@@ -16,6 +16,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import io.realm.Realm;
+import io.realm.RealmConfiguration;
+import io.realm.exceptions.RealmMigrationNeededException;
 import nz.co.pearson.vuwexams.fragments.ExamsFragment;
 import nz.co.pearson.vuwexams.fragments.GradesFragment;
 import nz.co.pearson.vuwexams.fragments.TimetableFragment;
@@ -29,7 +31,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if(realm != null && !realm.isClosed()) {
             realm.close();
         }
-        realm = Realm.getInstance(this);
+        try {
+            realm = Realm.getInstance(this);
+        } catch (RealmMigrationNeededException e) {
+            Realm.deleteRealm(new RealmConfiguration.Builder(this).build());
+            realm = Realm.getInstance(this);
+        }
+
 
         super.onCreate(savedInstanceState);
 
@@ -119,12 +127,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
-        /*
-        realm.beginTransaction();
-        realm.where(Course.class).findAll().clear();
-        realm.commitTransaction();
-        */
         realm.close();
     }
 }

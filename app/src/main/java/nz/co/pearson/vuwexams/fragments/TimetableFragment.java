@@ -1,7 +1,11 @@
 package nz.co.pearson.vuwexams.fragments;
 
 import android.app.Fragment;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,9 +23,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.realm.Realm;
+import io.realm.RealmChangeListener;
 import nz.co.pearson.vuwexams.MainActivity;
 import nz.co.pearson.vuwexams.R;
+import nz.co.pearson.vuwexams.networking.DataSource;
+import nz.co.pearson.vuwexams.networking.MyVicPortal;
+import nz.co.pearson.vuwexams.networking.exceptions.DataSourceError;
 import nz.co.pearson.vuwexams.networking.models.ClassEvent;
+import nz.co.pearson.vuwexams.networking.models.Course;
 import nz.co.pearson.vuwexams.networking.models.Month;
 
 public class TimetableFragment extends Fragment {
@@ -66,17 +75,75 @@ public class TimetableFragment extends Fragment {
             public List<? extends WeekViewEvent> onMonthChange(final int newYear, final int newMonth) {
                 Log.i("Timetable", String.format("Month changed %d/%d", newMonth, newYear));
                 Realm r = MainActivity.getRealm();
-                List<ClassEvent> events = r.where(ClassEvent.class).equalTo("startYear", newYear).equalTo("startMonth", newMonth).findAll();
-                List<WeekViewEvent> calendarEvents = new ArrayList<>();
-                for (ClassEvent event : events) {
-                    calendarEvents.add(ClassEvent.getEvent(event));
+                if(r.where(Month.class).equalTo("month", newMonth).equalTo("year", newYear).findAll().size() > 0) {
+                    List<ClassEvent> events = r.where(ClassEvent.class).equalTo("startYear", newYear).equalTo("startMonth", newMonth).findAll();
+                    List<WeekViewEvent> calendarEvents = new ArrayList<>();
+                    for (ClassEvent event : events) {
+                        calendarEvents.add(ClassEvent.getEvent(event));
+                    }
+                    return calendarEvents;
+                } else {
+                    new MonthDownloader(getActivity(), newMonth, newYear).execute();
+                    return new ArrayList<WeekViewEvent>();
                 }
-                return calendarEvents;
             }
         });
-
+        MainActivity.getRealm().addChangeListener(new RealmChangeListener() {
+            @Override
+            public void onChange() {
+                timetable.notifyDatasetChanged();
+            }
+        });
         return(view);
     }
 
+    @Override
+    public void onDestroyView() {
+        MainActivity.getRealm().removeAllChangeListeners();
+        super.onDestroyView();
+    }
 
+    private class MonthDownloader extends AsyncTask<Void, Void, Void> {
+        private Context context;
+        private int month;
+        private int year;
+        private boolean error = false;
+
+        public MonthDownloader(Context context, int month, int year) {
+            this.context = context;
+            this.month = month;
+            this.year = year;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+            String username = sharedPreferences.getString(context.getString(R.string.KEY_USERNAME), null);
+            String password = sharedPreferences.getString(context.getString(R.string.KEY_PASSWORD), null);
+            DataSource ds = new MyVicPortal(username, password);
+            try {
+                List<ClassEvent> events = ds.getEvents(month, year);
+                Realm r = Realm.getInstance(context);
+                r.beginTransaction();
+                r.where(ClassEvent.class).equalTo("month", month).equalTo("year", year).findAll().clear();
+                r.copyToRealm(new Month(month, year));
+                r.copyToRealm(events);
+                r.commitTransaction();
+                r.close();
+            } catch (DataSourceError e) {
+                error = true;
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+        }
+    }
 }

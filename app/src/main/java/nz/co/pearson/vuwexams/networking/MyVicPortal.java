@@ -75,7 +75,7 @@ public class MyVicPortal implements DataSource {
         if(isAuthenticated) {
             return true;
         }
-        if(username.equals("") || password.equals("")) {
+        if(username == null || password == null || username.equals("") || password.equals("")) {
             throw new DataSourceError();
         }
         try {
@@ -210,7 +210,13 @@ public class MyVicPortal implements DataSource {
 
     private void getWeek(List<ClassEvent> build, int day, int month, int year) throws DataSourceError, IOException {
         Log.i("Scraper", "Get week");
-        String page = getPage(String.format(URL_TIMETABLE_PAGE, day, month, year));
+        Document page = Jsoup.parse(getPage(String.format(URL_TIMETABLE_PAGE, day, month, year)));
+        Elements events = page.getElementsByClass("ddlabel");
+        for(Element event : events) {
+            if(event.children().size() > 0 && event.child(0).tagName().equals("a")) {
+                String[] lines = event.child(0).html().split("<br>");
+            }
+        }
 
 
         throw new IOException();

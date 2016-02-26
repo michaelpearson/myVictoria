@@ -7,6 +7,15 @@ import io.realm.RealmObject;
  */
 public class Month extends RealmObject {
     private int month;
+    private int year;
+
+    public int getYear() {
+        return year;
+    }
+
+    public void setYear(int year) {
+        this.year = year;
+    }
 
     public int getMonth() {
         return month;
@@ -20,8 +29,8 @@ public class Month extends RealmObject {
 
     }
 
-    public Month(int month) {
-
+    public Month(int month, int year) {
         this.month = month;
+        this.year = year;
     }
 }
