@@ -1,7 +1,6 @@
 package nz.co.pearson.vuwexams.networking;
 
 import android.net.Uri;
-import android.text.Html;
 import android.util.Log;
 
 import org.jsoup.Jsoup;
@@ -22,6 +21,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +30,8 @@ import java.util.regex.Pattern;
 
 import nz.co.pearson.vuwexams.networking.exceptions.AuthenticationError;
 import nz.co.pearson.vuwexams.networking.exceptions.DataSourceError;
-import nz.co.pearson.vuwexams.networking.exceptions.ParseError;
+import nz.co.pearson.vuwexams.networking.models.ClassEvent;
+import nz.co.pearson.vuwexams.networking.models.Course;
 
 public class MyVicPortal implements DataSource {
     private String username;
@@ -59,18 +60,23 @@ public class MyVicPortal implements DataSource {
 
     private static final String LOGIN_SUCCESSFUL_HINT = "loginok";
 
-    public static String debugData = null;
+    static {
+        CookieHandler.setDefault(cookieManager);
+    }
 
     public MyVicPortal(String username, String password) {
         this.username = username;
         this.password = password;
-        CookieHandler.setDefault(cookieManager);
+
     }
 
     @Override
     public boolean authenticate() throws DataSourceError {
         if(isAuthenticated) {
             return true;
+        }
+        if(username.equals("") || password.equals("")) {
+            throw new DataSourceError();
         }
         try {
             Matcher matches = GET_UID_PATTERN.matcher(getPage(URL_GET_LOGIN_TOKEN));
@@ -120,7 +126,9 @@ public class MyVicPortal implements DataSource {
 
     @Override
     public List<Course> retrieveCourses() throws DataSourceError {
-
+        if(!isAuthenticated) {
+            authenticate();
+        }
         List<Course> courses = new ArrayList<>();
 
         String academicHistoryPage;
@@ -159,10 +167,7 @@ public class MyVicPortal implements DataSource {
                 int gradepoint = 0;
                 try {
                     gradepoint = Integer.valueOf(singleCourse.get(7).text());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
+                } catch (Exception ignore) {}
                 int pointsGained = Integer.valueOf(singleCourse.get(8).text());
 
                 courses.add(new Course(year, grade, code, title, period, points, efts, registration, gradepoint, pointsGained));
@@ -172,15 +177,43 @@ public class MyVicPortal implements DataSource {
     }
 
     @Override
-    public List<ClassEvent> retrieveWeekOfClasses(int day, int month, int year) throws DataSourceError {
-        Log.i("Scraper", "Get classes");
-        if (true) return null;
+    public List<ClassEvent> getEvents(int month, int year) throws DataSourceError {
+        if(!isAuthenticated) {
+            authenticate();
+        }
+        List<ClassEvent> build = new ArrayList<>();
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(year, month + 1, 1);
+        calendar.setFirstDayOfWeek(Calendar.MONDAY);
+        while(calendar.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
+            calendar.add(Calendar.DATE, -1);
+        }
+
+        int oldMonth = calendar.get(Calendar.MONTH);
         try {
-            Log.i("Scraper", getPage(String.format(URL_TIMETABLE_PAGE, day, month, year)));
+            getWeek(build, calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.YEAR));
+            calendar.add(Calendar.DATE, 7);
+            getWeek(build, calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.YEAR));
+            calendar.add(Calendar.DATE, 7);
+            getWeek(build, calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.YEAR));
+            calendar.add(Calendar.DATE, 7);
+            getWeek(build, calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.YEAR));
+            calendar.add(Calendar.DATE, 7);
+            if (calendar.get(Calendar.MONTH) == oldMonth) {
+                getWeek(build, calendar.get(Calendar.DAY_OF_MONTH), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.YEAR));
+            }
         } catch (IOException e) {
             throw new DataSourceError();
         }
-        return null;
+        return build;
+    }
+
+    private void getWeek(List<ClassEvent> build, int day, int month, int year) throws DataSourceError, IOException {
+        Log.i("Scraper", "Get week");
+        String page = getPage(String.format(URL_TIMETABLE_PAGE, day, month, year));
+
+
+        throw new IOException();
     }
 
     private String getPage(String url) throws IOException {
@@ -188,12 +221,23 @@ public class MyVicPortal implements DataSource {
     }
 
     private String getPage(URL url) throws IOException {
+        return(getPage(url, true));
+    }
+
+    private String getPage(URL url, boolean shouldRetry) throws IOException {
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
         if(lastPage != null) {
             connection.setRequestProperty("Referer", lastPage);
         }
         lastPage = url.toString();
         log(String.format("Got webpage: %d %s %s", connection.getResponseCode(), connection.getResponseMessage(), connection.getURL().toString()));
+        if(connection.getResponseCode() == 403 && shouldRetry) {
+            isAuthenticated = false;
+            try {
+                authenticate();
+                return(getPage(url, false));
+            } catch (DataSourceError ignore) {}
+        }
         connection.setReadTimeout(2000);
         InputStream input = connection.getInputStream();
         return(readInputStream(input));

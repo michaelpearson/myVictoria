@@ -8,25 +8,35 @@ import android.os.Bundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import io.realm.Realm;
 import nz.co.pearson.vuwexams.fragments.ExamsFragment;
 import nz.co.pearson.vuwexams.fragments.GradesFragment;
 import nz.co.pearson.vuwexams.fragments.TimetableFragment;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+    private ActionBar actionBar = null;
+    private static Realm realm = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        if(realm != null && !realm.isClosed()) {
+            realm.close();
+        }
+        realm = Realm.getInstance(this);
+
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        actionBar = getSupportActionBar();
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -72,12 +82,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             default:
             case R.id.nav_grades:
                 newFragment = new GradesFragment();
+                actionBar.setTitle("Grades");
                 break;
             case R.id.nav_exams:
                 newFragment = new ExamsFragment();
+                actionBar.setTitle("Exams");
                 break;
             case R.id.nav_timetable:
                 newFragment = new TimetableFragment();
+                actionBar.setTitle("Timetable");
                 break;
             case R.id.nav_settings:
                 Intent i = new Intent(this, SettingsActivity.class);
@@ -97,5 +110,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         transaction.replace(R.id.fragment_container, newFragment);
         transaction.commit();
+    }
+
+    public static Realm getRealm() {
+        return(realm);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        /*
+        realm.beginTransaction();
+        realm.where(Course.class).findAll().clear();
+        realm.commitTransaction();
+        */
+        realm.close();
     }
 }

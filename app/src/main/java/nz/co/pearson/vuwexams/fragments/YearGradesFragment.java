@@ -1,12 +1,11 @@
 package nz.co.pearson.vuwexams.fragments;
 
+import android.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -15,22 +14,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.realm.Realm;
-import io.realm.RealmChangeListener;
+import nz.co.pearson.vuwexams.MainActivity;
 import nz.co.pearson.vuwexams.R;
-import nz.co.pearson.vuwexams.networking.Course;
-
-/**
- * Created by michael on 14/11/15.
- */
-public class YearGradesFragment extends NamedFragment {
+import nz.co.pearson.vuwexams.networking.models.Course;
+public class YearGradesFragment extends Fragment {
     public static final String KEY_YEAR = "year";
     private List<Course> courses;
-    private Realm realm;
-
-    @Override
-    public String getTitle() {
-        return(String.valueOf(getYear()));
-    }
 
     public int getYear() {
         return getArguments().getInt(KEY_YEAR, 0);
@@ -42,37 +31,13 @@ public class YearGradesFragment extends NamedFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_year_grades, container, false);
 
-        realm = Realm.getInstance(getActivity());
-
+        Realm realm = MainActivity.getRealm();
         courses = new ArrayList<>(realm.where(Course.class).equalTo("year", getYear()).findAll());
 
         final ListView list = (ListView) view.findViewById(R.id.course_list);
         list.setAdapter(new GradesAdapter());
-        list.setOnScrollListener(new AbsListView.OnScrollListener() {
-            private SwipeRefreshLayout swipeRefreshLayout;
-            @Override
-            public void onScrollStateChanged(AbsListView view, int scrollState) {
-
-            }
-
-            @Override
-            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-                if(swipeRefreshLayout == null) {
-                    swipeRefreshLayout = (SwipeRefreshLayout)getActivity().findViewById(R.id.swipe_refresh_layout);
-                }
-                int topRowVerticalPosition = (list == null || list.getChildCount() == 0) ? 0 : list.getChildAt(0).getTop();
-                swipeRefreshLayout.setEnabled(firstVisibleItem == 0 && topRowVerticalPosition >= 0);
-            }
-        });
-
 
         return(view);
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        realm.close();
     }
 
     @Override

@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
-import android.support.annotation.Nullable;
 
 import java.util.List;
 
@@ -16,6 +15,7 @@ import io.realm.Realm;
 import nz.co.pearson.vuwexams.R;
 import nz.co.pearson.vuwexams.SettingsActivity;
 import nz.co.pearson.vuwexams.networking.exceptions.DataSourceError;
+import nz.co.pearson.vuwexams.networking.models.Course;
 
 public abstract class ApiWorker extends AsyncTask<Void, String, List<Course>> {
     private Context context;

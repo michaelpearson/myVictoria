@@ -1,11 +1,10 @@
-package nz.co.pearson.vuwexams.networking;
+package nz.co.pearson.vuwexams.networking.models;
 
 import com.alamkanak.weekview.WeekViewEvent;
 
 import java.util.Calendar;
 
 import io.realm.RealmObject;
-import io.realm.annotations.Ignore;
 
 public class ClassEvent extends RealmObject {
     private int startYear;
@@ -19,19 +18,20 @@ public class ClassEvent extends RealmObject {
 
     public ClassEvent() {}
 
-    public ClassEvent(int startYear, int startMonth, int startDay, int startHour, int startMinute, int durationMinutes, String className, String classLocation) {
-        this.startYear = startYear;
-        this.startMonth = startMonth;
-        this.startDay = startDay;
-        this.startHour = startHour;
-        this.startMinute = startMinute;
-        this.durationMinutes = durationMinutes;
+    public ClassEvent(Calendar startDate, Calendar endDate, String className, String classLocation) {
         this.className = className;
         this.classLocation = classLocation;
+
+        startYear = startDate.get(Calendar.YEAR);
+        startMonth = startDate.get(Calendar.MONTH) + 1;
+        startDay = startDate.get(Calendar.DAY_OF_MONTH);
+        startHour = startDate.get(Calendar.HOUR_OF_DAY);
+        startMinute = startDate.get(Calendar.MINUTE);
+
+        durationMinutes = (int)((endDate.getTimeInMillis() - startDate.getTimeInMillis()) / 1000 / 60);
     }
 
     public int getStartYear() {
-
         return startYear;
     }
 

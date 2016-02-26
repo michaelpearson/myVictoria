@@ -18,38 +18,24 @@ import com.alamkanak.weekview.WeekViewEvent;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.realm.Realm;
+import nz.co.pearson.vuwexams.MainActivity;
 import nz.co.pearson.vuwexams.R;
-import nz.co.pearson.vuwexams.data.ClassEventModel;
-import nz.co.pearson.vuwexams.data.Model;
-import nz.co.pearson.vuwexams.networking.ClassEvent;
+import nz.co.pearson.vuwexams.networking.models.ClassEvent;
+import nz.co.pearson.vuwexams.networking.models.Month;
 
 public class TimetableFragment extends Fragment {
-    private ClassEventModel classEvents = null;
     private WeekView timetable = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        classEvents = new ClassEventModel(getActivity());
-        classEvents.addChangeListener(new Model.DataChangeListener() {
-            @Override
-            public void onDataChanged(Model model) {
-                Log.i("Timetable", "Data changed");
-                timetable.notifyDatasetChanged();
-            }
-            @Override
-            public void refreshFailed() {
-                Log.e("Timetable", "Refresh failed");
-            }
-        });
         setHasOptionsMenu(true);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        classEvents.destroy();
-        classEvents = null;
     }
 
     @Override
@@ -59,7 +45,12 @@ public class TimetableFragment extends Fragment {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 Log.i("Timetable", "Refresh clicked");
-                classEvents.refresh();
+                Realm r = MainActivity.getRealm();
+                r.beginTransaction();
+                r.where(ClassEvent.class).findAll().clear();
+                r.where(Month.class).findAll().clear();
+                r.commitTransaction();
+                timetable.notifyDatasetChanged();
                 return true;
             }
         });
@@ -74,16 +65,15 @@ public class TimetableFragment extends Fragment {
             @Override
             public List<? extends WeekViewEvent> onMonthChange(final int newYear, final int newMonth) {
                 Log.i("Timetable", String.format("Month changed %d/%d", newMonth, newYear));
-                classEvents.downloadMonth(newYear, newMonth);
-                List<WeekViewEvent> events = new ArrayList<>();
-                for (ClassEvent event : classEvents.matchEvents(newYear, newMonth)) {
-                    events.add(ClassEvent.getEvent(event));
-                    Log.i("Timetable", "Added event");
+                Realm r = MainActivity.getRealm();
+                List<ClassEvent> events = r.where(ClassEvent.class).equalTo("startYear", newYear).equalTo("startMonth", newMonth).findAll();
+                List<WeekViewEvent> calendarEvents = new ArrayList<>();
+                for (ClassEvent event : events) {
+                    calendarEvents.add(ClassEvent.getEvent(event));
                 }
-                return events;
+                return calendarEvents;
             }
         });
-
 
         return(view);
     }

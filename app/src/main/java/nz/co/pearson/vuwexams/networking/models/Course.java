@@ -1,4 +1,4 @@
-package nz.co.pearson.vuwexams.networking;
+package nz.co.pearson.vuwexams.networking.models;
 
 import io.realm.RealmObject;
 import io.realm.annotations.Ignore;
@@ -53,7 +53,7 @@ public class Course extends RealmObject {
 
     public Course() {}
 
-    protected Course(int year, String letterGrade, String courseCode, String title, String period, int points, double efts, String registrationStatus, int gradePoint, int pointsGained) {
+    public Course(int year, String letterGrade, String courseCode, String title, String period, int points, double efts, String registrationStatus, int gradePoint, int pointsGained) {
         this.year = year;
         this.letterGrade = letterGrade;
         this.courseCode = courseCode;
