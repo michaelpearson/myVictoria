@@ -23,6 +23,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -183,8 +184,7 @@ public class MyVicPortal implements DataSource {
         }
         List<ClassEvent> build = new ArrayList<>();
         Calendar calendar = Calendar.getInstance();
-        calendar.set(year, month + 1, 1);
-        calendar.setFirstDayOfWeek(Calendar.MONDAY);
+        calendar.set(year, month - 1, 1);
         while(calendar.get(Calendar.DAY_OF_WEEK) != Calendar.MONDAY) {
             calendar.add(Calendar.DATE, -1);
         }
@@ -205,21 +205,66 @@ public class MyVicPortal implements DataSource {
         } catch (IOException e) {
             throw new DataSourceError();
         }
-        return build;
+        List<ClassEvent> filtered = new ArrayList<>();
+        for(ClassEvent e : build) {
+            if(e.getStartMonth() == month) {
+                filtered.add(e);
+            }
+        }
+        return filtered;
     }
 
+    /**
+     * Expects that the day of the month is a monday
+     * @param build
+     * @param day
+     * @param month
+     * @param year
+     * @throws DataSourceError
+     * @throws IOException
+     */
     private void getWeek(List<ClassEvent> build, int day, int month, int year) throws DataSourceError, IOException {
         Log.i("Scraper", "Get week");
         Document page = Jsoup.parse(getPage(String.format(URL_TIMETABLE_PAGE, day, month, year)));
         Elements events = page.getElementsByClass("ddlabel");
         for(Element event : events) {
             if(event.children().size() > 0 && event.child(0).tagName().equals("a")) {
+
+                int dayOffset;
+                if(event.siblingElements().size() == 6) {
+                    dayOffset = event.elementSiblingIndex();
+                } else {
+                    dayOffset = event.elementSiblingIndex() - 1;
+                }
+
                 String[] lines = event.child(0).html().split("<br>");
+                String className = lines[0];
+                Calendar[] times = parseTimes(day + dayOffset, month, year, lines[2]);
+                String location = lines[3];
+                build.add(new ClassEvent(times[0], times[1], className, location));
             }
         }
+    }
 
+    private static Calendar[] parseTimes(int day, int month, int year, String times) {
+        String[] split = times.split("-");
+        Calendar startTime = parseTime(day, month, year, split[0]);
+        Calendar endTime = parseTime(day, month, year, split[1]);
+        return new Calendar[] {startTime, endTime};
+    }
 
-        throw new IOException();
+    private static Calendar parseTime(int day, int month, int year, String time) {
+        String[] split = time.split("[ :]");
+        int hours = Integer.valueOf(split[0]) + (split[2].equals("pm") && !split[0].equals("12") ? 12 : 0);
+        int minutes = Integer.valueOf(split[1]);
+        Calendar c = Calendar.getInstance();
+        c.set(Calendar.DAY_OF_MONTH, day);
+        c.set(Calendar.MONTH, month - 1);
+        c.set(Calendar.YEAR, year);
+        c.set(Calendar.HOUR_OF_DAY, hours);
+        c.set(Calendar.MINUTE, minutes);
+        c.set(Calendar.SECOND, 0);
+        return c;
     }
 
     private String getPage(String url) throws IOException {
@@ -246,7 +291,15 @@ public class MyVicPortal implements DataSource {
         }
         connection.setReadTimeout(2000);
         InputStream input = connection.getInputStream();
-        return(readInputStream(input));
+        String page = readInputStream(input);
+        if(page.contains("break-in attempt")) {
+            isAuthenticated = false;
+            try {
+                authenticate();
+                return(getPage(url, false));
+            } catch (DataSourceError ignore) {}
+        }
+        return(page);
     }
 
     private String sendPostRequest(String url, Map<String, String> data) throws IOException {

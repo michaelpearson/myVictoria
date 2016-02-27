@@ -77,4 +77,8 @@
 
 
     <string name="about_message">This app is a quick proof of concept app that can hopefully be useful to people. It uses VUW\'s myVictoria and student records system.</string>
+    <string name="Refresh">Refresh</string>
+    <string name="three_days">Three days</string>
+    <string name="five_days">Five days</string>
+    <string name="seven_days">Seven days</string>
 </resources>

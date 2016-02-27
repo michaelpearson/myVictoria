@@ -5,6 +5,7 @@ import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -25,6 +26,8 @@ import nz.co.pearson.vuwexams.fragments.TimetableFragment;
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private ActionBar actionBar = null;
     private static Realm realm = null;
+    private int currentFragment = 0;
+    private static final String KEY_SELECTED_FRAGMENT = "fragment";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,7 +40,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             Realm.deleteRealm(new RealmConfiguration.Builder(this).build());
             realm = Realm.getInstance(this);
         }
-
 
         super.onCreate(savedInstanceState);
 
@@ -54,7 +56,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
         navigationView.setCheckedItem(R.id.nav_grades);
-        switchFragment();
+
+        if(savedInstanceState != null) {
+            switchFragment(savedInstanceState.getInt(KEY_SELECTED_FRAGMENT, 0));
+        } else {
+            switchFragment(0);
+        }
     }
 
     @Override
@@ -78,10 +85,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
-    }
-
-    private void switchFragment() {
-        switchFragment(0);
     }
 
     private void switchFragment(int menuItem) {
@@ -115,9 +118,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 new AlertDialog.Builder(this).setPositiveButton(android.R.string.ok, null).setTitle("About").setMessage(getString(R.string.about_message)).show();
                 return;
         }
+        currentFragment = menuItem;
         FragmentTransaction transaction = getFragmentManager().beginTransaction();
         transaction.replace(R.id.fragment_container, newFragment);
         transaction.commit();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putInt(KEY_SELECTED_FRAGMENT, currentFragment);
+        super.onSaveInstanceState(outState);
     }
 
     public static Realm getRealm() {

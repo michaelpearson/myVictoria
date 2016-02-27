@@ -1,8 +1,11 @@
 package nz.co.pearson.vuwexams.networking.models;
 
+import android.graphics.Color;
+
 import com.alamkanak.weekview.WeekViewEvent;
 
 import java.util.Calendar;
+import java.util.Random;
 
 import io.realm.RealmObject;
 
@@ -108,7 +111,25 @@ public class ClassEvent extends RealmObject {
                 classEvent.getStartDay(),
                 classEvent.getStartHour(),
                 classEvent.getStartMinute() + classEvent.getDurationMinutes());
+        event.setColor(generateRandomColor(classEvent.getClassName()));
         event.setLocation(classEvent.getClassLocation());
         return event;
+    }
+
+    private static int generateRandomColor(String seed) {
+        if(seed == null) {
+            seed = "";
+        }
+        Random random = new Random();
+        random.setSeed(seed.hashCode());
+        int red = random.nextInt(256);
+        int green = random.nextInt(256);
+        int blue = random.nextInt(256);
+
+        red = (red + 100) / 2;
+        green = (green + 100) / 2;
+        blue = (blue + 100) / 2;
+
+        return Color.rgb(red, green, blue);
     }
 }

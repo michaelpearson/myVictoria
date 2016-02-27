@@ -3,6 +3,7 @@ package nz.co.pearson.vuwexams.fragments;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -14,6 +15,9 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
 
 import com.alamkanak.weekview.MonthLoader;
 import com.alamkanak.weekview.WeekView;
@@ -23,18 +27,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.realm.Realm;
-import io.realm.RealmChangeListener;
 import nz.co.pearson.vuwexams.MainActivity;
 import nz.co.pearson.vuwexams.R;
 import nz.co.pearson.vuwexams.networking.DataSource;
+import nz.co.pearson.vuwexams.networking.MonthDownloader;
 import nz.co.pearson.vuwexams.networking.MyVicPortal;
 import nz.co.pearson.vuwexams.networking.exceptions.DataSourceError;
 import nz.co.pearson.vuwexams.networking.models.ClassEvent;
-import nz.co.pearson.vuwexams.networking.models.Course;
 import nz.co.pearson.vuwexams.networking.models.Month;
 
-public class TimetableFragment extends Fragment {
+public class TimetableFragment extends Fragment implements MonthDownloader.DownloadCompleteListener {
     private WeekView timetable = null;
+    private Animation rotationAnimation = null;
+    private ImageView refreshButtonImage = null;
+    private static final String KEY_DAYS_VISIBLE = "days_visible";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -43,16 +49,16 @@ public class TimetableFragment extends Fragment {
     }
 
     @Override
-    public void onDestroy() {
-        super.onDestroy();
-    }
-
-    @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.timetable_options, menu);
-        menu.getItem(0).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+        MenuItem refreshButton = menu.findItem(R.id.refresh);
+        refreshButton.setActionView(R.layout.spinner_animation);
+        rotationAnimation = AnimationUtils.loadAnimation(getActivity(), R.anim.refresh);
+        rotationAnimation.setRepeatCount(Animation.INFINITE);
+        refreshButtonImage = (ImageView)refreshButton.getActionView().findViewById(R.id.refresh_image);
+        refreshButton.getActionView().setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onMenuItemClick(MenuItem item) {
+            public void onClick(View v) {
                 Log.i("Timetable", "Refresh clicked");
                 Realm r = MainActivity.getRealm();
                 r.beginTransaction();
@@ -60,9 +66,26 @@ public class TimetableFragment extends Fragment {
                 r.where(Month.class).findAll().clear();
                 r.commitTransaction();
                 timetable.notifyDatasetChanged();
-                return true;
             }
         });
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch(item.getItemId()) {
+            case R.id.three_days:
+                timetable.setNumberOfVisibleDays(3);
+                break;
+            case R.id.five_days:
+                timetable.setNumberOfVisibleDays(5);
+                break;
+            case R.id.seven_days:
+                timetable.setNumberOfVisibleDays(7);
+                break;
+            default:
+                return false;
+        }
+        return true;
     }
 
     @Nullable
@@ -73,77 +96,59 @@ public class TimetableFragment extends Fragment {
         timetable.setMonthChangeListener(new MonthLoader.MonthChangeListener() {
             @Override
             public List<? extends WeekViewEvent> onMonthChange(final int newYear, final int newMonth) {
+                List<WeekViewEvent> calendarEvents = new ArrayList<>();
                 Log.i("Timetable", String.format("Month changed %d/%d", newMonth, newYear));
                 Realm r = MainActivity.getRealm();
-                if(r.where(Month.class).equalTo("month", newMonth).equalTo("year", newYear).findAll().size() > 0) {
+                if (r.where(Month.class).equalTo("month", newMonth).equalTo("year", newYear).findAll().size() > 0) {
                     List<ClassEvent> events = r.where(ClassEvent.class).equalTo("startYear", newYear).equalTo("startMonth", newMonth).findAll();
-                    List<WeekViewEvent> calendarEvents = new ArrayList<>();
                     for (ClassEvent event : events) {
                         calendarEvents.add(ClassEvent.getEvent(event));
                     }
-                    return calendarEvents;
                 } else {
                     new MonthDownloader(getActivity(), newMonth, newYear).execute();
-                    return new ArrayList<WeekViewEvent>();
                 }
+
+                if (MonthDownloader.getLoadingCount() > 0) {
+                    if (refreshButtonImage.getAnimation() == null) {
+                        refreshButtonImage.startAnimation(rotationAnimation);
+                    }
+                } else {
+                    if (refreshButtonImage != null) {
+                        refreshButtonImage.clearAnimation();
+                    }
+                }
+
+                return calendarEvents;
             }
         });
-        MainActivity.getRealm().addChangeListener(new RealmChangeListener() {
-            @Override
-            public void onChange() {
-                timetable.notifyDatasetChanged();
-            }
-        });
+        if(savedInstanceState != null) {
+            timetable.setNumberOfVisibleDays(savedInstanceState.getInt(KEY_DAYS_VISIBLE, 5));
+        } else {
+            timetable.setNumberOfVisibleDays(5);
+        }
+        timetable.setNowLineColor(Color.RED);
+        timetable.setNowLineThickness(10);
+        timetable.setShowNowLine(true);
+
+        MonthDownloader.setEventListener(this);
+
         return(view);
     }
 
     @Override
-    public void onDestroyView() {
-        MainActivity.getRealm().removeAllChangeListeners();
-        super.onDestroyView();
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putInt(KEY_DAYS_VISIBLE, timetable.getNumberOfVisibleDays());
+        super.onSaveInstanceState(outState);
     }
 
-    private class MonthDownloader extends AsyncTask<Void, Void, Void> {
-        private Context context;
-        private int month;
-        private int year;
-        private boolean error = false;
+    @Override
+    public void onDestroy() {
+        refreshButtonImage.clearAnimation();
+        super.onDestroy();
+    }
 
-        public MonthDownloader(Context context, int month, int year) {
-            this.context = context;
-            this.month = month;
-            this.year = year;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-            String username = sharedPreferences.getString(context.getString(R.string.KEY_USERNAME), null);
-            String password = sharedPreferences.getString(context.getString(R.string.KEY_PASSWORD), null);
-            DataSource ds = new MyVicPortal(username, password);
-            try {
-                List<ClassEvent> events = ds.getEvents(month, year);
-                Realm r = Realm.getInstance(context);
-                r.beginTransaction();
-                r.where(ClassEvent.class).equalTo("month", month).equalTo("year", year).findAll().clear();
-                r.copyToRealm(new Month(month, year));
-                r.copyToRealm(events);
-                r.commitTransaction();
-                r.close();
-            } catch (DataSourceError e) {
-                error = true;
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-        }
+    @Override
+    public void notifyComplete() {
+        timetable.notifyDatasetChanged();
     }
 }

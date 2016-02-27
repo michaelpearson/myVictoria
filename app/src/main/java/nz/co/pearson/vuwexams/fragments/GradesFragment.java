@@ -1,14 +1,8 @@
 package nz.co.pearson.vuwexams.fragments;
 
-import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.app.ProgressDialog;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.design.widget.AppBarLayout;
 import android.support.v13.app.FragmentStatePagerAdapter;
@@ -32,14 +26,11 @@ import io.realm.RealmChangeListener;
 import nz.co.pearson.vuwexams.MainActivity;
 import nz.co.pearson.vuwexams.R;
 import nz.co.pearson.vuwexams.networking.models.Course;
-import nz.co.pearson.vuwexams.networking.DataSource;
-import nz.co.pearson.vuwexams.networking.MyVicPortal;
-import nz.co.pearson.vuwexams.networking.exceptions.DataSourceError;
+import nz.co.pearson.vuwexams.networking.GradesDownloader;
 
 public class GradesFragment extends Fragment {
     private AppBarLayout appBarLayout;
     private PagerSlidingTabStrip tabs;
-    private ViewPager viewPager;
     private YearPagerAdapter yearPagerAdapter;
 
     @Override
@@ -50,14 +41,16 @@ public class GradesFragment extends Fragment {
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.timetable_options, menu);
-        menu.getItem(0).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                new GradesDownloader(getActivity()).execute();
-                return true;
-            }
-        });
+        inflater.inflate(R.menu.grades_options, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if(item.getItemId() == R.id.refresh) {
+            new GradesDownloader(getActivity()).execute();
+            return(true);
+        }
+        return false;
     }
 
     @Nullable @Override
@@ -65,22 +58,20 @@ public class GradesFragment extends Fragment {
         Log.i("Grades", "Create View");
 
         View view = inflater.inflate(R.layout.fragment_grades, container, false);
-        viewPager = (ViewPager) view.findViewById(R.id.pager);
 
         appBarLayout = (AppBarLayout)getActivity().findViewById(R.id.toolbar_layout);
 
         tabs = new PagerSlidingTabStrip(appBarLayout.getContext());
-        tabs.setMinimumHeight((int) Math.ceil(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 30, getResources().getDisplayMetrics())));
         tabs.setShouldExpand(true);
         tabs.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
         tabs.setTextColorResource(R.color.white);
         tabs.setIndicatorColorResource(R.color.light);
 
-        appBarLayout.addView(tabs);
+        appBarLayout.addView(tabs, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, (int)Math.ceil(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 30, getResources().getDisplayMetrics())) ));
 
         yearPagerAdapter = new YearPagerAdapter(getChildFragmentManager());
 
-        viewPager = (ViewPager)view.findViewById(R.id.pager);
+        ViewPager viewPager = (ViewPager)view.findViewById(R.id.pager);
         viewPager.setAdapter(yearPagerAdapter);
         tabs.setViewPager(viewPager);
 
@@ -99,58 +90,6 @@ public class GradesFragment extends Fragment {
         super.onDestroyView();
         appBarLayout.removeView(tabs);
         MainActivity.getRealm().removeAllChangeListeners();
-    }
-
-    class GradesDownloader extends AsyncTask<Void, Void, List<Course>> {
-        private Context context;
-        private ProgressDialog pd;
-        private boolean error = false;
-
-        public GradesDownloader(Context context) {
-            this.context = context;
-        }
-
-        @Override
-        protected void onPreExecute() {
-            pd = new ProgressDialog(context);
-            pd.setTitle("Loading classes");
-            pd.setMessage("Please wait while your classes and grades are downloaded");
-            pd.setCancelable(false);
-            pd.show();
-        }
-
-        @Override
-        protected List<Course> doInBackground(Void... params) {
-            SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
-            String username = sharedPreferences.getString(context.getString(R.string.KEY_USERNAME), null);
-            String password = sharedPreferences.getString(context.getString(R.string.KEY_PASSWORD), null);
-            DataSource ds = new MyVicPortal(username, password);
-            try {
-                List<Course> courses = ds.retrieveCourses();
-                Realm r = Realm.getInstance(context);
-                r.beginTransaction();
-                r.where(Course.class).findAll().clear();
-                r.commitTransaction();
-                r.beginTransaction();
-                r.copyToRealm(courses);
-                r.commitTransaction();
-                r.close();
-            } catch (DataSourceError e) {
-                error = true;
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(List<Course> courses) {
-            try {
-                pd.dismiss();
-                if(error) {
-                    AlertDialog ad = new AlertDialog.Builder(context).setTitle("Error").setMessage("Could not retrieve courses").setPositiveButton(android.R.string.ok, null).create();
-                    ad.show();
-                }
-            } catch (IllegalArgumentException ignore) {}
-        }
     }
 
     public class YearPagerAdapter extends FragmentStatePagerAdapter {
