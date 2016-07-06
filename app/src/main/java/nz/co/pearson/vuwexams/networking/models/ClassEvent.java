@@ -19,6 +19,7 @@ public class ClassEvent extends RealmObject {
     private String className;
     private String classLocation;
 
+    @SuppressWarnings("unused")
     public ClassEvent() {}
 
     public ClassEvent(Calendar startDate, Calendar endDate, String className, String classLocation) {
@@ -38,6 +39,7 @@ public class ClassEvent extends RealmObject {
         return startYear;
     }
 
+    @SuppressWarnings("unused")
     public void setStartYear(int startYear) {
         this.startYear = startYear;
     }
@@ -46,6 +48,7 @@ public class ClassEvent extends RealmObject {
         return startMonth;
     }
 
+    @SuppressWarnings("unused")
     public void setStartMonth(int startMonth) {
         this.startMonth = startMonth;
     }
@@ -54,6 +57,7 @@ public class ClassEvent extends RealmObject {
         return startDay;
     }
 
+    @SuppressWarnings("unused")
     public void setStartDay(int startDay) {
         this.startDay = startDay;
     }
@@ -62,6 +66,7 @@ public class ClassEvent extends RealmObject {
         return startHour;
     }
 
+    @SuppressWarnings("unused")
     public void setStartHour(int startHour) {
         this.startHour = startHour;
     }
@@ -70,6 +75,7 @@ public class ClassEvent extends RealmObject {
         return startMinute;
     }
 
+    @SuppressWarnings("unused")
     public void setStartMinute(int startMinute) {
         this.startMinute = startMinute;
     }
@@ -78,6 +84,7 @@ public class ClassEvent extends RealmObject {
         return durationMinutes;
     }
 
+    @SuppressWarnings("unused")
     public void setDurationMinutes(int durationMinutes) {
         this.durationMinutes = durationMinutes;
     }
@@ -86,6 +93,7 @@ public class ClassEvent extends RealmObject {
         return className;
     }
 
+    @SuppressWarnings("unused")
     public void setClassName(String className) {
         this.className = className;
     }
@@ -94,6 +102,7 @@ public class ClassEvent extends RealmObject {
         return classLocation;
     }
 
+    @SuppressWarnings("unused")
     public void setClassLocation(String classLocation) {
         this.classLocation = classLocation;
     }

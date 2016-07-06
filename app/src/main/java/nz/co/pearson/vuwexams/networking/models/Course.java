@@ -18,6 +18,7 @@ public class Course extends RealmObject {
     private int pointsGaines;
     private int year;
 
+    @SuppressWarnings("unused")
     @Ignore
     private int EnumPeriod;
     //Hack: Cannot have custom methods on a model.
@@ -51,6 +52,7 @@ public class Course extends RealmObject {
         }
     }
 
+    @SuppressWarnings("unused")
     public Course() {}
 
     public Course(int year, String letterGrade, String courseCode, String title, String period, int points, double efts, String registrationStatus, int gradePoint, int pointsGained) {
@@ -70,6 +72,7 @@ public class Course extends RealmObject {
         return year;
     }
 
+    @SuppressWarnings("unused")
     public void setYear(int year) {
         this.year = year;
     }
@@ -78,6 +81,7 @@ public class Course extends RealmObject {
         return letterGrade;
     }
 
+    @SuppressWarnings("unused")
     public void setLetterGrade(String letterGrade) {
         this.letterGrade = letterGrade;
     }
@@ -86,6 +90,7 @@ public class Course extends RealmObject {
         return courseCode;
     }
 
+    @SuppressWarnings("unused")
     public void setCourseCode(String courseCode) {
         this.courseCode = courseCode;
     }
@@ -102,51 +107,63 @@ public class Course extends RealmObject {
         return period;
     }
 
+    @SuppressWarnings("unused")
     public void setPeriod(String period) {
         this.period = period;
     }
 
 
+    @SuppressWarnings("unused")
     public CoursePeriod getEnumPeriod() {
         return(CoursePeriod.fromDescriptor(getPeriod()));
     }
 
+    @SuppressWarnings("unused")
     public int getPoints() {
         return points;
     }
 
+    @SuppressWarnings("unused")
     public void setPoints(int points) {
         this.points = points;
     }
 
+    @SuppressWarnings("unused")
     public double getEfts() {
         return efts;
     }
 
+    @SuppressWarnings("unused")
     public void setEfts(double efts) {
         this.efts = efts;
     }
 
+    @SuppressWarnings("unused")
     public String getRegistrationStatus() {
         return registrationStatus;
     }
 
+    @SuppressWarnings("unused")
     public void setRegistrationStatus(String registrationStatus) {
         this.registrationStatus = registrationStatus;
     }
 
+    @SuppressWarnings("unused")
     public int getGradePoint() {
         return gradePoint;
     }
 
+    @SuppressWarnings("unused")
     public void setGradePoint(int gradePoint) {
         this.gradePoint = gradePoint;
     }
 
+    @SuppressWarnings("unused")
     public int getPointsGaines() {
         return pointsGaines;
     }
 
+    @SuppressWarnings("unused")
     public void setPointsGaines(int pointsGaines) {
         this.pointsGaines = pointsGaines;
     }

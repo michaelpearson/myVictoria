@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.AppBarLayout;
 import android.support.v13.app.FragmentStatePagerAdapter;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 import android.util.TypedValue;
@@ -63,7 +64,7 @@ public class GradesFragment extends Fragment {
 
         tabs = new PagerSlidingTabStrip(appBarLayout.getContext());
         tabs.setShouldExpand(true);
-        tabs.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+        tabs.setBackgroundColor(ContextCompat.getColor(appBarLayout.getContext(), R.color.colorPrimary));
         tabs.setTextColorResource(R.color.white);
         tabs.setIndicatorColorResource(R.color.light);
 

@@ -1,12 +1,8 @@
 package nz.co.pearson.vuwexams.fragments;
 
 import android.app.Fragment;
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -29,10 +25,7 @@ import java.util.List;
 import io.realm.Realm;
 import nz.co.pearson.vuwexams.MainActivity;
 import nz.co.pearson.vuwexams.R;
-import nz.co.pearson.vuwexams.networking.DataSource;
 import nz.co.pearson.vuwexams.networking.MonthDownloader;
-import nz.co.pearson.vuwexams.networking.MyVicPortal;
-import nz.co.pearson.vuwexams.networking.exceptions.DataSourceError;
 import nz.co.pearson.vuwexams.networking.models.ClassEvent;
 import nz.co.pearson.vuwexams.networking.models.Month;
 

@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 
-import java.util.EventListener;
 import java.util.List;
 
 import io.realm.Realm;
@@ -85,7 +84,4 @@ public class MonthDownloader extends AsyncTask<Void, Void, List<ClassEvent>> {
         }
     }
 
-    public static void removeEventListener() {
-        eventListener = null;
-    }
 }

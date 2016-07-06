@@ -2,6 +2,7 @@ package nz.co.pearson.vuwexams;
 
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
@@ -13,7 +14,10 @@ public class SettingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        ActionBar actionBar;
+        if((actionBar = getSupportActionBar()) != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
         getFragmentManager().beginTransaction().replace(R.id.fragment_container, new ReceiverSettingsFragment()).commit();
     }
 

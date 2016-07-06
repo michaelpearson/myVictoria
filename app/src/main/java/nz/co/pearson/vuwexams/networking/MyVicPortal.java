@@ -1,5 +1,6 @@
 package nz.co.pearson.vuwexams.networking;
 
+import android.annotation.SuppressLint;
 import android.net.Uri;
 import android.util.Log;
 
@@ -16,14 +17,12 @@ import java.io.OutputStreamWriter;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
-import java.net.HttpCookie;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -48,17 +47,22 @@ public class MyVicPortal implements DataSource {
     private static final String FORM_NAME_UID_TOKEN = "uuid";
     private static final String FORM_NAME_PASSWORD = "pass";
 
+    @SuppressWarnings("SpellCheckingInspection")
     private static final String URL_GET_LOGIN_TOKEN = "https://my.vuw.ac.nz/cp/home/displaylogin";
+    @SuppressWarnings("SpellCheckingInspection")
     private static final String URL_GET_REQUIRED_COOKIES = "https://my.vuw.ac.nz/cp/home/loginf";
     private static final String URL_LOGIN = "https://my.vuw.ac.nz/cp/home/login";
+    @SuppressWarnings("SpellCheckingInspection")
     private static final String URL_STUDENT_RECORDS_SESSION_HANDOFF = "http://my.vuw.ac.nz/cp/ip/login?sys=sctssb&url=https://student-records.vuw.ac.nz/pls/webprod/bwskfshd.P_CrseSchd";
+    @SuppressWarnings("SpellCheckingInspection")
     private static final String URL_ACADEMIC_HISTORY = "https://student-records.vuw.ac.nz/pls/webprod/bwsxacdh.P_FacStuInfo";
-
+    @SuppressWarnings("SpellCheckingInspection")
     private static final String URL_TIMETABLE_PAGE = "https://student-records.vuw.ac.nz/pls/webprod/bwskfshd.P_CrseSchd?start_date_in=%d/%d/%d";
 
     private static final Pattern GET_UID_PATTERN = Pattern.compile("document\\.cplogin\\.uuid\\.value=\"((?:[a-f0-9]+-)+[a-f0-9]+)\"");
     private static final Pattern GET_STUDENT_RECORDS_LOGIN_TOKEN = Pattern.compile("document\\.location=\"([^\"]+)\";");
 
+    @SuppressWarnings("SpellCheckingInspection")
     private static final String LOGIN_SUCCESSFUL_HINT = "loginok";
 
     static {
@@ -111,20 +115,6 @@ public class MyVicPortal implements DataSource {
         }
     }
 
-    private void dumpCookies() {
-        log("Cookies:");
-        for(HttpCookie cookie : cookieManager.getCookieStore().getCookies()) {
-            log(String.format("URL: %s Value: %s", cookie.toString(), cookie.getValue()));
-        }
-    }
-
-    private void dumpMap(Map<String, String> map) {
-        for(Map.Entry<String, String> e : map.entrySet()) {
-            log(String.format("Key: %s, Value: %s", e.getKey(), e.getValue()));
-        }
-    }
-
-
     @Override
     public List<Course> retrieveCourses() throws DataSourceError {
         if(!isAuthenticated) {
@@ -148,7 +138,7 @@ public class MyVicPortal implements DataSource {
             int year = 0;
             try {
                 year = Integer.valueOf(programTables.get(i++).getElementsByTag("td").first().text().substring(0, 4));
-                //TODO: there is a small possibility that vic won't have changed there system in 7,985 years. Could be a problem.
+                //there is a small possibility that vic won't have changed their system in 7,985 years. Could be a problem.
             } catch(Exception e) {
                 e.printStackTrace();
                 //Its hardly surprising that this line would crash
@@ -165,13 +155,13 @@ public class MyVicPortal implements DataSource {
                 double efts = Double.valueOf(singleCourse.get(4).text());
                 String registration = singleCourse.get(5).text();
                 String grade = singleCourse.get(6).text();
-                int gradepoint = 0;
+                int gradePoint = 0;
                 try {
-                    gradepoint = Integer.valueOf(singleCourse.get(7).text());
+                    gradePoint = Integer.valueOf(singleCourse.get(7).text());
                 } catch (Exception ignore) {}
                 int pointsGained = Integer.valueOf(singleCourse.get(8).text());
 
-                courses.add(new Course(year, grade, code, title, period, points, efts, registration, gradepoint, pointsGained));
+                courses.add(new Course(year, grade, code, title, period, points, efts, registration, gradePoint, pointsGained));
             }
         }
         return courses;
@@ -216,13 +206,11 @@ public class MyVicPortal implements DataSource {
 
     /**
      * Expects that the day of the month is a monday
-     * @param build
-     * @param day
-     * @param month
-     * @param year
      * @throws DataSourceError
      * @throws IOException
      */
+    @SuppressLint("DefaultLocale")
+    @SuppressWarnings("SpellCheckingInspection")
     private void getWeek(List<ClassEvent> build, int day, int month, int year) throws DataSourceError, IOException {
         Log.i("Scraper", "Get week");
         Document page = Jsoup.parse(getPage(String.format(URL_TIMETABLE_PAGE, day, month, year)));
@@ -275,6 +263,8 @@ public class MyVicPortal implements DataSource {
         return(getPage(url, true));
     }
 
+    @SuppressLint("DefaultLocale")
+    @SuppressWarnings("SpellCheckingInspection")
     private String getPage(URL url, boolean shouldRetry) throws IOException {
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
         if(lastPage != null) {
