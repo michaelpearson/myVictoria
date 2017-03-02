@@ -33,7 +33,7 @@ import nz.co.pearson.vuwexams.networking.exceptions.DataSourceError;
 import nz.co.pearson.vuwexams.networking.models.ClassEvent;
 import nz.co.pearson.vuwexams.networking.models.Course;
 
-public class MyVicPortal implements DataSource {
+class MyVicPortal implements DataSource {
     private String username;
     private String password;
     private static CookieManager cookieManager = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
@@ -53,23 +53,22 @@ public class MyVicPortal implements DataSource {
     private static final String URL_GET_REQUIRED_COOKIES = "https://my.vuw.ac.nz/cp/home/loginf";
     private static final String URL_LOGIN = "https://my.vuw.ac.nz/cp/home/login";
     @SuppressWarnings("SpellCheckingInspection")
-    private static final String URL_STUDENT_RECORDS_SESSION_HANDOFF = "http://my.vuw.ac.nz/cp/ip/login?sys=sctssb&url=https://student-records.vuw.ac.nz/pls/webprod/bwskfshd.P_CrseSchd";
+    private static final String URL_STUDENT_RECORDS_SESSION_HANDOFF = "https://my.vuw.ac.nz/cp/ip/login?sys=sctssb&url=https://student-records.vuw.ac.nz/pls/webprod/bwskfshd.P_CrseSchd";
     @SuppressWarnings("SpellCheckingInspection")
     private static final String URL_ACADEMIC_HISTORY = "https://student-records.vuw.ac.nz/pls/webprod/bwsxacdh.P_FacStuInfo";
     @SuppressWarnings("SpellCheckingInspection")
     private static final String URL_TIMETABLE_PAGE = "https://student-records.vuw.ac.nz/pls/webprod/bwskfshd.P_CrseSchd?start_date_in=%d/%d/%d";
 
     private static final Pattern GET_UID_PATTERN = Pattern.compile("document\\.cplogin\\.uuid\\.value=\"((?:[a-f0-9]+-)+[a-f0-9]+)\"");
-    private static final Pattern GET_STUDENT_RECORDS_LOGIN_TOKEN = Pattern.compile("document\\.location=\"([^\"]+)\";");
 
     @SuppressWarnings("SpellCheckingInspection")
-    private static final String LOGIN_SUCCESSFUL_HINT = "loginok";
+    private static final String LOGIN_SUCCESSFUL_HINT = "Login Successful";
 
     static {
         CookieHandler.setDefault(cookieManager);
     }
 
-    public MyVicPortal(String username, String password) {
+    MyVicPortal(String username, String password) {
         this.username = username;
         this.password = password;
 
@@ -99,13 +98,8 @@ public class MyVicPortal implements DataSource {
                 Log.i("Auth", page);
                 throw new AuthenticationError();
             }
-            Matcher loginTicket = GET_STUDENT_RECORDS_LOGIN_TOKEN.matcher(getPage(URL_STUDENT_RECORDS_SESSION_HANDOFF));
-            if(!loginTicket.find()) {
-                throw new DataSourceError();
-            }
-            String loginUrl = loginTicket.group(1);
-            getPage(loginUrl);
-
+            // Open the page to ensure that all of the cookies have been set for student records
+            getPage(URL_STUDENT_RECORDS_SESSION_HANDOFF);
             isAuthenticated = true;
             return true;
 
@@ -260,23 +254,24 @@ public class MyVicPortal implements DataSource {
     }
 
     private String getPage(URL url) throws IOException {
-        return(getPage(url, true));
+        return(getPage(url, 10));
     }
 
     @SuppressLint("DefaultLocale")
     @SuppressWarnings("SpellCheckingInspection")
-    private String getPage(URL url, boolean shouldRetry) throws IOException {
+    private String getPage(URL url, int redirectFollowCount) throws IOException {
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+        connection.setRequestProperty("User-Agent", "Android scraper");
         if(lastPage != null) {
             connection.setRequestProperty("Referer", lastPage);
         }
         lastPage = url.toString();
         log(String.format("Got webpage: %d %s %s", connection.getResponseCode(), connection.getResponseMessage(), connection.getURL().toString()));
-        if(connection.getResponseCode() == 403 && shouldRetry) {
+        if(connection.getResponseCode() == 403 && redirectFollowCount > 0) {
             isAuthenticated = false;
             try {
                 authenticate();
-                return(getPage(url, false));
+                return(getPage(url, redirectFollowCount - 1));
             } catch (DataSourceError ignore) {}
         }
         connection.setReadTimeout(2000);
@@ -286,7 +281,7 @@ public class MyVicPortal implements DataSource {
             isAuthenticated = false;
             try {
                 authenticate();
-                return(getPage(url, false));
+                return(getPage(url, redirectFollowCount - 1));
             } catch (DataSourceError ignore) {}
         }
         return(page);
@@ -297,6 +292,7 @@ public class MyVicPortal implements DataSource {
     }
     private String sendPostRequest(URL url, Map<String, String> data) throws IOException {
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+        connection.setRequestProperty("User-Agent", "Android scraper");
         connection.setReadTimeout(1000);
         connection.setConnectTimeout(3000);
         connection.setRequestMethod("POST");
